@@ -4,7 +4,6 @@ import sys
 import re
 
 def determineCoverage(dataset, attributes, itemset):    
-    # send in one item set not all of them
     coverage = 0
     for instance in dataset:
         instanceItems = instance.split(',')
@@ -45,7 +44,6 @@ attributes = {}
 decision = None
 index = 0
 for line in datasetLines:
-    # print line
     if dataStart == True:
         dataset.append(line)
     if line.startswith("@relation"):
@@ -64,7 +62,6 @@ for line in datasetLines:
 
 sets = []
 for key, value in attributes.items():
-    # print attributes[key]
     for each in attributes[key]['options']:
         item = []
         item.append((key, each))
@@ -86,18 +83,23 @@ while currentSize <= maxSize:
     addSets = []
     for x in oneItemSets:
         for y in currentItemSets:
-            # print "current: ", x, y
             attrsY = [z[0] for z in y]
-            # print "x", x[0][0]
-            # # print "set", y
-            # print "firsts in tuples", [hey for hey in attrsY]
             if x[0][0] not in attrsY and sorted(x+y) not in addSets:
-                # print "###### adding!"
                 if determineCoverage(dataset, attributes, sorted(x+y)) >= minCoverage:
                     print sorted(x+y), determineCoverage(dataset, attributes, sorted(x+y))
                     addSets.append(sorted(x+y))
     sets.extend(addSets)
     currentSize += 1
+
 print ""
-print "final"
+print "all sets that meant minCoverage and are no more than maxSize"
 print sets
+
+'''
+rule = {
+    antecedent: []
+    consequent: []
+}
+
+
+
