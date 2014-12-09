@@ -70,15 +70,24 @@ def buildTree(_node, instance, attribute, sets):
 		else:
 			return
 
-def something(_node, headerTable):
-	replaceIndex = None
-	for entry in headerTable:
-		if entry[0] == _node.value:
-			if entry[1].count < _node.count:
-				replaceIndex = headerTable.index(entry)
-				break
-	if replaceIndex:
-		headerTable[replaceIndex] = (_node.value, _node)
+# do breadth first search
+# if node attribute has not been encountered before, add it and make that node the header
+# else add that node as the next node in the list for that attribute
+def createHeaderTable(_node, headerTable):
+	# if not the root node
+	if _node.value:
+		found = False
+		for entry in headerTable:
+			if entry[0].value == _node.value:
+				found = True
+				# link this node in the header table
+				entry.append(_node)
+		if not found:
+			# add node and make it the header
+			headerTable.append( [_node] )
+	for child in _node.children:
+		createHeaderTable(child, headerTable)
+	return
 
 
 ########################
@@ -187,3 +196,12 @@ root = node(None, None, None) # access tree through root
 for instance in instances:
 	buildTree(root, instance, instance[0], sets)
 
+############################################################
+# create header table and link nodes with same 1-item sets #
+############################################################
+headerTable = []
+createHeaderTable(root, headerTable)
+# for header in headerTable:
+# 	for item in header:
+# 		print item
+# 	print ""
