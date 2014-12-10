@@ -213,14 +213,14 @@ finalRules.sort(key=lambda x: x[1])
 finalRules.reverse()
 
 if reportNumber.lower() == 'all':
-    print "Reporting back all association rules:"
+    print "Reporting back all association rules that meet requirements:"
     print ""
     for each in finalRules:
         print each[0], "   Confidence: ", each[1]
     print ""
 else:
     reportNumber = int(reportNumber)
-    print "Reporting back the most accurate ", reportNumber, " association rules:"
+    print "Reporting back the most accurate ", reportNumber, " association rules that meet requirements:"
     print ""
     for each in finalRules[:reportNumber]:
         print each[0], "   Confidence: ", each[1]
