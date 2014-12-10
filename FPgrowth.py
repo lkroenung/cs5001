@@ -176,8 +176,8 @@ def findPathsInTree(root, minCoverage):
         # if node's freq is higher than min coverage
         elif current.count >= minCoverage:
                 itemset = makeItemsetFrom(current)
-                # get rid of trivial item sets
-                if len(itemset) > 1:
+                # get rid of trivial item sets and itemsets bigger than maxSize
+                if len(itemset) > 1 and len(itemset) <= maxSize:
                     resultingItemsets.append(itemset)
                 # continue down the tree
                 for each in current.children:
