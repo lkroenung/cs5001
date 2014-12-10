@@ -76,8 +76,6 @@ def determineAccuracy(dataset, attributes, rule):
 
     numerator = float(determineCoverage(dataset, attributes, rule.antecedent + rule.consequent))
     denominator = float(determineCoverage(dataset, attributes, rule.antecedent))
-    # print "numer: ", numerator
-    # print "denom: ", denominator
     return (numerator/denominator)
 
 # [TODO] nothing calls this atm dumby
@@ -118,6 +116,84 @@ def createHeaderTable(_node, headerTable):
     for child in _node.children:
         createHeaderTable(child, headerTable)
     return
+
+def makeItemsetFrom(node):
+    current = node
+    itemset = []
+    itemset.append(current.value)
+
+    while current.parent != None:
+        current = current.parent
+        if current.value != None:
+            itemset.append(current.value)
+
+    return itemset
+
+def findPathsInTree(root, minCoverage):
+    resultingItemsets = []
+    queue = [root]
+
+    while queue:
+        current = queue.pop(0)
+        # this is the root of the tree, ignore it
+        if current.value == None:
+            for each in current.children:
+                queue.append(each)
+        # if node's freq is higher than min coverage
+        elif current.count >= minCoverage:
+                itemset = makeItemsetFrom(current)
+                # get rid of trivial item sets
+                if len(itemset) > 1:
+                    resultingItemsets.append(itemset)
+                # continue down the tree
+                for each in current.children:
+                    queue.append(each)
+
+    return resultingItemsets
+
+def buildRulesFromItemsets(itemsets, dataset, attributes, minAccuracy):
+    rules = []
+    # create all possible rules that have a single consequent
+    for itemset in itemsets:
+        # if the item-set is longer than one, we need to manually account for if _ then all
+        if len(itemset) > 1:
+            newRule = Rule([], itemset)
+            # print newRule, determineAccuracy(dataset, attributes, newRule)
+            if determineAccuracy(dataset, attributes, newRule) >= minAccuracy:
+                rules.append(newRule)
+
+        # for each combination of rules
+        for x in itemset:
+            indexOfEach = itemset.index(x)
+            newRule = Rule(itemset[:indexOfEach]+itemset[indexOfEach+1:], [x])
+            # print newRule, determineAccuracy(dataset, attributes, newRule)
+            if determineAccuracy(dataset, attributes, newRule) >= minAccuracy and newRule not in rules:
+                # passes min accuracy
+                rules.append(newRule)
+
+    currentConsequentSize = 1
+    addRules = []
+    stillRules = True
+
+    while stillRules:
+        currentRules = [rule for rule in rules if len(rule.consequent) == currentConsequentSize and len(rule.antecedent) > 1]
+        addRules = []
+        if currentRules:
+            for rule in currentRules:
+                for each in rule.antecedent:
+                    indexOfEach = rule.antecedent.index(each)
+                    newRule = Rule(rule.antecedent[:indexOfEach]+rule.antecedent[indexOfEach+1:], rule.consequent + [each])
+                    # print newRule, determineAccuracy(dataset, attributes, newRule)
+                    if determineAccuracy(dataset, attributes, newRule) >= minAccuracy and newRule not in addRules:
+                        # passes min accuracy
+                        addRules.append(newRule)
+        else:
+            stillRules = False
+        currentConsequentSize += 1
+        rules.extend(addRules)
+
+    return rules
+
 
 ########################
 # read in a .arff file #
@@ -260,115 +336,68 @@ for instance in instances:
 # find small item sets #
 ########################
 
-def makeItemsetFrom(node):
-    current = node
-    itemset = []
-    itemset.append(current.value)
-
-    while current.parent != None:
-        current = current.parent
-        if current.value != None:
-            itemset.append(current.value)
-
-    return itemset
-
-smallItemsets = []
-queue = [root]
-
-while queue:
-    current = queue.pop(0)
-    # this is the root of the tree, ignore it
-    if current.value == None:
-        for each in current.children:
-            queue.append(each)
-    # if node's freq is higher than min coverage
-    elif current.count >= minCoverage:
-            itemset = makeItemsetFrom(current)
-            # get rid of trivial item sets
-            if len(itemset) > 1:
-                smallItemsets.append(itemset)
-            # continue down the tree
-            for each in current.children:
-                queue.append(each)
+smallItemsets = findPathsInTree(root, minCoverage)
 
 print ""
 print "Small item sets:"
 print smallItemsets
 
-# build assocciation rules and check accuracy from these
+###### build assocciation rules from smallItemsets and check accuracy
 
-rules = []
-# create all possible rules that have a single consequent
-for itemset in smallItemsets:
-    # if the item-set is longer than one, we need to manually account for if _ then all
-    if len(itemset) > 1:
-        newRule = Rule([], itemset)
-        # print newRule, determineAccuracy(dataset, attributes, newRule)
-        if determineAccuracy(dataset, attributes, newRule) >= minAccuracy:
-            rules.append(newRule)
-
-    # for each combination of rules
-    for x in itemset:
-        indexOfEach = itemset.index(x)
-        newRule = Rule(itemset[:indexOfEach]+itemset[indexOfEach+1:], [x])
-        # print newRule, determineAccuracy(dataset, attributes, newRule)
-        if determineAccuracy(dataset, attributes, newRule) >= minAccuracy and newRule not in rules:
-            # passes min accuracy
-            rules.append(newRule)
-
-currentConsequentSize = 1
-addRules = []
-stillRules = True
-
-while stillRules:
-    currentRules = [rule for rule in rules if len(rule.consequent) == currentConsequentSize and len(rule.antecedent) > 1]
-    addRules = []
-    if currentRules:
-        for rule in currentRules:
-            for each in rule.antecedent:
-                indexOfEach = rule.antecedent.index(each)
-                newRule = Rule(rule.antecedent[:indexOfEach]+rule.antecedent[indexOfEach+1:], rule.consequent + [each])
-                # print newRule, determineAccuracy(dataset, attributes, newRule)
-                if determineAccuracy(dataset, attributes, newRule) >= minAccuracy and newRule not in addRules:
-                    # passes min accuracy
-                    addRules.append(newRule)
-    else:
-        stillRules = False
-    currentConsequentSize += 1
-    rules.extend(addRules)
+totalRules = buildRulesFromItemsets(smallItemsets, dataset, attributes, minAccuracy)
 
 print ""
 print "Total rules after generating rules from small item sets:"
-print rules
+print totalRules
 print ""
 
 ############################################################
 # create header table and link nodes with same 1-item sets #
 ############################################################
+
 headerTable = []
 createHeaderTable(root, headerTable)
 for header in headerTable:
     for item in header:
-        print item
-    print ""
+        # print item
+    # print ""
 
 #########################
 # find larger item sets #
 #########################
 
-# take the lowest freq item set (bottom of the header table yes)
-# change counts of this node's ancestors to reflect only the number of instances in node's subtree where chosen itemset is true
-# and remove chosen lowest itemset nodes from tree (all of them I guess?)
+largerItemsets = []
 
-# repeat going through the tree and finding item sets,
-# these newly made item sets will include the item set that was removed
+# repeat all these steps again until you reach the root as the node to be removed, cause ha dont do that
 
-# restore the original counts (but not the original tree structure)
-# [she says to restore counts in one example but doesn't mention it in the other, confused, but i would assume restore counts]
-# remove the next lowest freq item
+    # choose the lowest freq item set (would bottom of the header table yes)
+    # change counts of this node's ancestors to reflect only the number of instances in node's subtree where chosen itemset is true
+    # and remove chosen lowest itemset nodes from tree (all of them I guess)
 
-# continue all these steps again until you reach the root as the node to be removed, cause ha dont do that
+    # Walk through this new tree and find possible item sets (findPathsInTree())
+    # Do this using the function findPathsInTree() and everytime you use this function you should extend the returned results onto the list called largerItemsets
+    # these newly made item sets will "include" the item set that was removed (cause the counts were changed)
+
+    # restore the original counts (but not the original tree structure)
+    # [she says to restore counts in one example but doesn't mention it in the other, confused, but i would assume restore counts]
+    # remove the next lowest freq item
+
+    # repeat steps until you reach the root as the node to be removed
 
 
+# so now, you should have all found itemsets from every iteration and they should be together in largerItemsets
+# use the buildRulesFromItemsets() function and pass in largerItemsets to compute all possible rules from largerItemsets
+
+# combine the rules I found from smallItemsets (these are in totalRules list)
+# and the ones you just found from largerItemsets (so just extend your results onto totalRules)
+
+# order them in the combined list in ascending order of accuracy of the rule
+# you can do this to order them:
+
+# finalRules = [[each, determineAccuracy(dataset, attributes, each)] for each in totalRules]
+# finalRules.sort(key=lambda x: x[1])
+# finalRules.reverse()
 
 
+# we need to ask the user for number of rules to report, this will be how many of finalRules we output to screen
+# look at apriori.py if you want code for this

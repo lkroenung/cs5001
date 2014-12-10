@@ -64,6 +64,7 @@ dataset = []
 attributes = {}
 decision = None
 index = 0
+
 # for each line from the file
 for line in datasetLines:
     # if we passed "@data", the lines after are our instances
@@ -78,13 +79,11 @@ for line in datasetLines:
         attributeMatch = re.search('(?<=@attribute) (\w+)', line)
         optionsMatch = re.search(r'{(.*)}', line)
         if optionsMatch:
-            # print line, "within {}"
             attributes[attributeMatch.group(0).strip()] = {
                 'index': index,
                 'options': optionsMatch.group(0).lstrip('{').rstrip('}').split(', ')
             }
         else:
-            # print line, line.split()[-1].strip()
             attributes[attributeMatch.group(0).strip()] = {
                 'index': index,
                 'options': line.split()[-1].strip()
@@ -119,8 +118,6 @@ for key, value in attributes.items():
         # if this 1 item-set passes minCoverage, add it to total sets
         if determineCoverage(dataset, attributes, item) >= minCoverage:
             sets.append(item)
-# print "all 1 item sets", sets
-# print ""
 
 # what size item-set we are on (starts at 2 since we just did 1 item-sets)
 currentSize = 2
@@ -144,7 +141,6 @@ while currentSize <= maxSize:
             if x[0][0] not in attrsY and sorted(x+y) not in addSets:
                 # if this new item-set passes minCoverage
                 if determineCoverage(dataset, attributes, sorted(x+y)) >= minCoverage:
-                    # print sorted(x+y), determineCoverage(dataset, attributes, sorted(x+y))
                     addSets.append(sorted(x+y))
     # add all new item-sets to total sets
     sets.extend(addSets)
@@ -160,8 +156,6 @@ for each in sets:
 rules = []
 # create all possible rules that have a single consequent
 for itemset in sets:
-    # print ""
-    # print "itemset: ", itemset
     # if the item-set is longer than one, we need to manually account for if _ then all
     if len(itemset) > 1:
         newRule = Rule([], itemset)
@@ -177,13 +171,7 @@ for itemset in sets:
         if determineAccuracy(dataset, attributes, newRule) >= minAccuracy and newRule not in rules:
             # passes min accuracy
             rules.append(newRule)
-# print ""
-# print rules
 
-# print ""
-# print ""
-# print ""
-#could do the same while loop if i just look at rules with rule.consequent == current, current++, until that gives none
 currentConsequentSize = 1
 addRules = []
 stillRules = True
@@ -193,7 +181,6 @@ while stillRules:
     addRules = []
     if currentRules:
         for rule in currentRules:
-            # print rule
             for each in rule.antecedent:
                 indexOfEach = rule.antecedent.index(each)
                 newRule = Rule(rule.antecedent[:indexOfEach]+rule.antecedent[indexOfEach+1:], rule.consequent + [each])
@@ -204,11 +191,10 @@ while stillRules:
     else:
         stillRules = False
     currentConsequentSize += 1
-    # print "addRules: ", addRules
     rules.extend(addRules)
 
 print ""
-finalRules = [[each,determineAccuracy(dataset, attributes, each)] for each in rules]
+finalRules = [[each, determineAccuracy(dataset, attributes, each)] for each in rules]
 finalRules.sort(key=lambda x: x[1])
 finalRules.reverse()
 
@@ -225,34 +211,3 @@ else:
     for each in finalRules[:reportNumber]:
         print each[0], "   Confidence: ", each[1]
     print ""
-
-# each, "   Confidence: ", determineAccuracy(dataset, attributes, each)
-
-
-# for each in rules:
-#     print rules.count(each)
-
-# print rules[0]
-# if rules[0] in rules:
-#     print "yas"
-
-# for rule in rules:
-#     if len(rule.consequent) == currentConsequentSize and len(rule.antecedent) > 1:
-#         print rule
-#         for each in rule.antecedent:
-#             indexOfEach = rule.antecedent.index(each)
-#             newRule = Rule(rule.antecedent[:indexOfEach]+rule.antecedent[indexOfEach+1:], rule.consequent + [each])
-#             print newRule, determineAccuracy(dataset, attributes, newRule)
-#             if determineAccuracy(dataset, attributes, newRule) >= minAccuracy and newRule not in rules:
-#                 # passes min accuracy
-#                 addRules.append(newRule)
-
-# print addRules
-
-
-
-
-
-
-
-
