@@ -2,6 +2,7 @@
 
 import sys
 import re
+import copy
 
 class node:
     def __init__(self, value, frequency, parent):
@@ -10,6 +11,7 @@ class node:
         self.children = []
         self.value = value
         self.count = 1
+        self.originalCount = None
     def __str__(self):
         return "Node:  value = " + str(self.value) + ", count = " + str(self.count)  + ", frequency = " + str(self.frequency)
     def __repr__(self):
@@ -19,6 +21,14 @@ class node:
         self.count = self.count + 1
     def incrementCount(self):
         self.count = self.count + 1
+    def makeCurrentCountOriginal(self):
+        self.originalCount = self.count
+        for child in self.children:
+            child.makeCurrentCountOriginal()
+    def restoreOriginalCount(self):
+        self.count = self.originalCount
+        for child in self.children:
+            child.restoreOriginalCount()
     def containsChild(self, attribute):
         # print "attribute being searched for in children of this node: ", attribute
         if self.children == None:
@@ -117,8 +127,32 @@ def createHeaderTable(_node, headerTable):
         createHeaderTable(child, headerTable)
     return
 
-def makeItemsetFrom(node):
-    current = node
+def extendTree(_node, attribute):
+    if _node.children:
+        _node.count = 0
+        for child in _node.children:
+            _node.count = _node.count + extendTree(child, attribute)
+        return _node.count
+    else:
+        if _node.value == attribute:
+            return _node.count
+        else:
+            _node.count = 0
+            return _node.count
+
+def removeAllNodesWithAttribute(_node, attribute):
+    removeMe = []
+    for child in _node.children:
+        if child.value == attribute:
+            removeMe.append(child)
+        else:
+            for each in child.children:
+                removeAllNodesWithAttribute(each, attribute)
+    for me in removeMe:
+        _node.children.remove(me)
+
+def makeItemsetFrom(_node):
+    current = _node
     itemset = []
     itemset.append(current.value)
 
@@ -209,8 +243,9 @@ else:
 
 # get input from the user
 minCoverage = int(raw_input("Minimum coverage: "))
-# maxSize = int(raw_input("Maximum size of sets to consider: ")) # [TODO] may not need this
+maxSize = int(raw_input("Maximum size of sets to consider: "))
 minAccuracy = float(raw_input("Minimum accuracy: "))
+reportNumber = raw_input("Number of rules to report back: ")
 
 dataStart = False
 dataset = []
@@ -331,6 +366,7 @@ for instance in instances:
 root = node(None, None, None) # access tree through root
 for instance in instances:
     buildTree(root, instance, instance[0], sets)
+root.makeCurrentCountOriginal()
 
 ########################
 # find small item sets #
@@ -357,8 +393,8 @@ print ""
 
 headerTable = []
 createHeaderTable(root, headerTable)
-for header in headerTable:
-    for item in header:
+# for header in headerTable:
+    # for item in header:
         # print item
     # print ""
 
@@ -367,6 +403,42 @@ for header in headerTable:
 #########################
 
 largerItemsets = []
+
+# create copy of original tree
+newRoot = copy.deepcopy(root)
+
+for header in headerTable:
+    # change counts in nodes to only be the number instances in that node's subtree for which current attribute from header table is true
+    extendTree(newRoot, header[0].value)
+
+    # delete nodes from the extended FP-tree with the current attribute from the header table
+    removeAllNodesWithAttribute(newRoot, header[0].value)
+
+    # walk through this new tree and find possible item sets
+    largerItemsets.extend(findPathsInTree(newRoot, minCoverage))
+
+    # restore th eoriginal counts (but not the original tree structure)
+    newRoot.restoreOriginalCount()
+
+totalRules.extend(buildRulesFromItemsets(largerItemsets, dataset, attributes, minAccuracy))
+
+finalRules = [[each, determineAccuracy(dataset, attributes, each)] for each in totalRules]
+finalRules.sort(key=lambda x: x[1])
+finalRules.reverse()
+
+if reportNumber.lower() == 'all':
+    print "Reporting back all association rules that meet requirements:"
+    print ""
+    for each in finalRules:
+        print each[0], "   Confidence: ", each[1]
+    print ""
+else:
+    reportNumber = int(reportNumber)
+    print "Reporting back the most accurate ", reportNumber, " association rules that meet requirements:"
+    print ""
+    for each in finalRules[:reportNumber]:
+        print each[0], "   Confidence: ", each[1]
+    print ""
 
 # repeat all these steps again until you reach the root as the node to be removed, cause ha dont do that
 
