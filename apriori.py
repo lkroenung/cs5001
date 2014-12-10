@@ -3,6 +3,15 @@
 import sys
 import re
 
+class Rule():
+    def __init__(self, ant, cons):
+        self.antecedent = sorted(ant)
+        self.consequent = sorted(cons)
+    def __eq__(self, other):
+        return (self.antecedent == other.antecedent and self.consequent == other.consequent)
+    def __repr__(self):
+        return "Rule:  if " + (", ".join([str(x) for x in self.antecedent]) if self.antecedent != [] else '_') + " then " + ", ".join([str(x) for x in self.consequent])
+
 # determine the coverage of an item-set on the dataset instances
 def determineCoverage(dataset, attributes, itemset):    
     coverage = 0
@@ -21,6 +30,19 @@ def determineCoverage(dataset, attributes, itemset):
             coverage += 1
     return coverage
 
+# determine the accuracy of a rule
+def determineAccuracy(dataset, attributes, rule):
+    # instances where ALL CONDITIONS in the rule are true
+    # divided by
+    # instance where only conditions in ANTECENDENT are true
+
+    numerator = float(determineCoverage(dataset, attributes, rule.antecedent + rule.consequent))
+    denominator = float(determineCoverage(dataset, attributes, rule.antecedent))
+    # print "numer: ", numerator
+    # print "denom: ", denominator
+    return (numerator/denominator)
+
+print ""
 # read in an .arff file
 filename = raw_input("Name of the input file: ")
 if not filename.lower().endswith(".arff"):
@@ -34,12 +56,8 @@ else:
 # get input from the user
 minCoverage = int(raw_input("Minimum coverage: "))
 maxSize = int(raw_input("Maximum size of sets to consider: "))
-# minAccuracy = raw_input("Minimum accuracy: ")
-# reportNumber = raw_input("Number of rules to report back: ")
-# if reportNumber.lower() == 'all':
-#     print "Report back all rules"
-
-print ""
+minAccuracy = float(raw_input("Minimum accuracy: "))
+reportNumber = raw_input("Number of rules to report back: ")
 
 dataStart = False
 dataset = []
@@ -59,16 +77,34 @@ for line in datasetLines:
     elif line.startswith("@attribute"):
         attributeMatch = re.search('(?<=@attribute) (\w+)', line)
         optionsMatch = re.search(r'{(.*)}', line)
-        attributes[attributeMatch.group(0).strip()] = {
-            'index': index,
-            'options': optionsMatch.group(0).lstrip('{').rstrip('}').split(', ')
-        }
+        if optionsMatch:
+            # print line, "within {}"
+            attributes[attributeMatch.group(0).strip()] = {
+                'index': index,
+                'options': optionsMatch.group(0).lstrip('{').rstrip('}').split(', ')
+            }
+        else:
+            # print line, line.split()[-1].strip()
+            attributes[attributeMatch.group(0).strip()] = {
+                'index': index,
+                'options': line.split()[-1].strip()
+            }
         # last line is the decision attribute
         decision = attributeMatch.group(0).strip()
         index += 1
     # set dataStart if we hit "@data"
     elif line == "@data":
         dataStart = True
+
+for attribute, attrDict in attributes.items():
+    if attrDict['options'] == 'real':
+        numberOptions = []
+        for line in dataset:
+            line2 = line.split(',')
+            if line2[attrDict['index']] not in numberOptions:
+                numberOptions.append(line2[attrDict['index']])
+        attrDict['options'] = numberOptions
+
 
 # find all 1 item-sets
 sets = []
@@ -78,13 +114,13 @@ for key, value in attributes.items():
     for each in attributes[key]['options']:
         item = []
         item.append((key, each))
-        # check against min coverage
-        print item, determineCoverage(dataset, attributes, item)
+        # check against minCoverage
+        # print item, determineCoverage(dataset, attributes, item)
         # if this 1 item-set passes minCoverage, add it to total sets
         if determineCoverage(dataset, attributes, item) >= minCoverage:
             sets.append(item)
-print "all 1 item sets", sets
-print ""
+# print "all 1 item sets", sets
+# print ""
 
 # what size item-set we are on (starts at 2 since we just did 1 item-sets)
 currentSize = 2
@@ -108,24 +144,115 @@ while currentSize <= maxSize:
             if x[0][0] not in attrsY and sorted(x+y) not in addSets:
                 # if this new item-set passes minCoverage
                 if determineCoverage(dataset, attributes, sorted(x+y)) >= minCoverage:
-                    print sorted(x+y), determineCoverage(dataset, attributes, sorted(x+y))
+                    # print sorted(x+y), determineCoverage(dataset, attributes, sorted(x+y))
                     addSets.append(sorted(x+y))
     # add all new item-sets to total sets
     sets.extend(addSets)
     currentSize += 1
 
 print ""
-print "all sets that met minCoverage and are no more than maxSize"
-print sets
+print "All sets that meet Minimum Coverage and are no more than the Max Size of Item Sets:"
+print ""
+for each in sets:
+    print "Item set: ", ", ".join([str(x) for x in each]), "   Coverage: ", determineCoverage(dataset, attributes, each)
 
-'''
-rule = {
-    antecedent: []
-    consequent: []
-}
-'''
 
+rules = []
+# create all possible rules that have a single consequent
 for itemset in sets:
-    pass
+    # print ""
+    # print "itemset: ", itemset
+    # if the item-set is longer than one, we need to manually account for if _ then all
+    if len(itemset) > 1:
+        newRule = Rule([], itemset)
+        # print newRule, determineAccuracy(dataset, attributes, newRule)
+        if determineAccuracy(dataset, attributes, newRule) >= minAccuracy:
+            rules.append(newRule)
+
+    # for each combination of rules
+    for x in itemset:
+        indexOfEach = itemset.index(x)
+        newRule = Rule(itemset[:indexOfEach]+itemset[indexOfEach+1:], [x])
+        # print newRule, determineAccuracy(dataset, attributes, newRule)
+        if determineAccuracy(dataset, attributes, newRule) >= minAccuracy and newRule not in rules:
+            # passes min accuracy
+            rules.append(newRule)
+# print ""
+# print rules
+
+# print ""
+# print ""
+# print ""
+#could do the same while loop if i just look at rules with rule.consequent == current, current++, until that gives none
+currentConsequentSize = 1
+addRules = []
+stillRules = True
+
+while stillRules:
+    currentRules = [rule for rule in rules if len(rule.consequent) == currentConsequentSize and len(rule.antecedent) > 1]
+    addRules = []
+    if currentRules:
+        for rule in currentRules:
+            # print rule
+            for each in rule.antecedent:
+                indexOfEach = rule.antecedent.index(each)
+                newRule = Rule(rule.antecedent[:indexOfEach]+rule.antecedent[indexOfEach+1:], rule.consequent + [each])
+                # print newRule, determineAccuracy(dataset, attributes, newRule)
+                if determineAccuracy(dataset, attributes, newRule) >= minAccuracy and newRule not in addRules:
+                    # passes min accuracy
+                    addRules.append(newRule)
+    else:
+        stillRules = False
+    currentConsequentSize += 1
+    # print "addRules: ", addRules
+    rules.extend(addRules)
+
+print ""
+finalRules = [[each,determineAccuracy(dataset, attributes, each)] for each in rules]
+finalRules.sort(key=lambda x: x[1])
+finalRules.reverse()
+
+if reportNumber.lower() == 'all':
+    print "Reporting back all association rules:"
+    print ""
+    for each in finalRules:
+        print each[0], "   Confidence: ", each[1]
+    print ""
+else:
+    reportNumber = int(reportNumber)
+    print "Reporting back the most accurate ", reportNumber, " association rules:"
+    print ""
+    for each in finalRules[:reportNumber]:
+        print each[0], "   Confidence: ", each[1]
+    print ""
+
+# each, "   Confidence: ", determineAccuracy(dataset, attributes, each)
+
+
+# for each in rules:
+#     print rules.count(each)
+
+# print rules[0]
+# if rules[0] in rules:
+#     print "yas"
+
+# for rule in rules:
+#     if len(rule.consequent) == currentConsequentSize and len(rule.antecedent) > 1:
+#         print rule
+#         for each in rule.antecedent:
+#             indexOfEach = rule.antecedent.index(each)
+#             newRule = Rule(rule.antecedent[:indexOfEach]+rule.antecedent[indexOfEach+1:], rule.consequent + [each])
+#             print newRule, determineAccuracy(dataset, attributes, newRule)
+#             if determineAccuracy(dataset, attributes, newRule) >= minAccuracy and newRule not in rules:
+#                 # passes min accuracy
+#                 addRules.append(newRule)
+
+# print addRules
+
+
+
+
+
+
 
 
