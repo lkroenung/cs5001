@@ -169,7 +169,7 @@ def findPathsInTree(root, minCoverage, dataset, attributes):
 
     while queue:
         current = queue.pop(0)
-        print current
+        # print current
         # this is the root of the tree, ignore it
         if current.value == None:
             for each in current.children:
@@ -177,9 +177,9 @@ def findPathsInTree(root, minCoverage, dataset, attributes):
         # if node's freq is higher than min coverage
         elif current.count >= minCoverage:
                 itemset = makeItemsetFrom(current)
-                print itemset, determineCoverage(dataset, attributes, itemset)
+                # print itemset, determineCoverage(dataset, attributes, itemset)
                 # get rid of trivial item sets and itemsets bigger than maxSize
-                if len(itemset) > 1 and len(itemset) <= maxSize:
+                if len(itemset) > 1 and len(itemset) <= maxSize and determineCoverage(dataset,attributes,itemset) >= minCoverage:
                     resultingItemsets.append(itemset)
                 # continue down the tree
                 for each in current.children:
@@ -254,23 +254,28 @@ dataset = []
 attributes = {}
 decision = None
 index = 0
+
 # for each line from the file
 for line in datasetLines:
     # if we passed "@data", the lines after are our instances
+    if line.lower().startswith("%"):
+        dataStart = False
     if dataStart == True:
         dataset.append(line)
     # if line starts with @relation
-    if line.startswith("@relation"):
+    if line.lower().startswith("@relation"):
         pass
     # if a line starts with @attribute
     # add it to the attribute dict with its respective options and index (used later)
-    elif line.startswith("@attribute"):
-        attributeMatch = re.search('(?<=@attribute) (\w+)', line)
+    elif line.lower().startswith("@attribute"):
+        attributeMatch = re.search('(?<=@attribute) (\w+)', line, re.IGNORECASE)
         optionsMatch = re.search(r'{(.*)}', line)
         if optionsMatch:
+            optionsList = optionsMatch.group(0).lstrip('{').rstrip('}').split(',')
+            optionsList = [x.strip() for x in optionsList]
             attributes[attributeMatch.group(0).strip()] = {
                 'index': index,
-                'options': optionsMatch.group(0).lstrip('{').rstrip('}').split(', ')
+                'options': optionsList
             }
         else:
             attributes[attributeMatch.group(0).strip()] = {
@@ -281,11 +286,11 @@ for line in datasetLines:
         decision = attributeMatch.group(0).strip()
         index += 1
     # set dataStart if we hit "@data"
-    elif line == "@data":
+    elif line.lower() == "@data":
         dataStart = True
 
 for attribute, attrDict in attributes.items():
-    if attrDict['options'] == 'real':
+    if attrDict['options'] == 'real' or attrDict['options'] == 'REAL':
         numberOptions = []
         for line in dataset:
             line2 = line.split(',')
@@ -376,11 +381,11 @@ root.makeCurrentCountOriginal()
 
 smallItemsets = findPathsInTree(root, minCoverage, dataset, attributes)
 
-print ""
-print "Small item sets:"
-for each in smallItemsets:
-    print each, determineCoverage(dataset, attributes, each)
-print ""
+# print ""
+# print "Small item sets:"
+# for each in smallItemsets:
+#     print each, determineCoverage(dataset, attributes, each)
+# print ""
 
 ###### build assocciation rules from smallItemsets and check accuracy
 
@@ -424,7 +429,7 @@ for header in headerTable:
     # restore th eoriginal counts (but not the original tree structure)
     newRoot.restoreOriginalCount()
 
-print "All sets that meet Minimum Coverage and are no more than the Max Size of Item Sets:"
+print "All sets that meet Minimum Coverage and are no more than the Max Size of Item Sets (" + str(maxSize) + "):"
 print ""
 for each in smallItemsets:
     print "Item set: ", ", ".join([str(x) for x in each]), "   Coverage: ", determineCoverage(dataset, attributes, each)
