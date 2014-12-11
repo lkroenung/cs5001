@@ -260,10 +260,39 @@ else:
     datasetLines = [line.strip('\n') for line in datasetFile.readlines() if line.strip('\n') != '']
 
 # get input from the user
-minCoverage = int(raw_input("Minimum coverage (0-n): "))
-maxSize = int(raw_input("Maximum size of sets to consider (0-n): "))
-minAccuracy = float(raw_input("Minimum accuracy (0.0-1.0): "))
-reportNumber = raw_input("Number of rules to report back (0-n, 'all'): ")
+minCoverage = 0
+while minCoverage < 1:
+    minCoverage = raw_input("Minimum coverage (1-n): ")
+    try:
+        minCoverage = int(minCoverage)
+    except ValueError:
+        minCoverage = 0
+
+maxSize = 0
+while maxSize < 1:
+    maxSize = raw_input("Maximum size of sets to consider (1-n): ")
+    try:
+        maxSize = int(maxSize)
+    except ValueError:
+        maxSize = 0
+
+minAccuracy = -1
+while minAccuracy <= 0 or minAccuracy > 1:
+    minAccuracy = raw_input("Minimum accuracy (0.0-1.0): ")
+    try:
+        minAccuracy = float(minAccuracy)
+    except ValueError:
+        minAccuracy = -1
+
+reportNumber = -1
+while reportNumber <= 0 and reportNumber != 'all':
+    reportNumber = raw_input("Number of rules to report back (1-n, 'all'): ")
+    if reportNumber != 'all':
+        try:
+            if int(reportNumber) <= 0:
+                reportNumber = -1
+        except ValueError:
+            reportNumber = -1
 
 dataStart = False
 dataset = []
