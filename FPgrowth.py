@@ -16,8 +16,17 @@ class node:
         return "Node:  value = " + str(self.value) + ", count = " + str(self.count)  + ", frequency = " + str(self.frequency)
     def __repr__(self):
         return str(self.value)
-    def addChild(self, child):
-        self.children.append(child)
+    def addChild(self, _child):
+        self.children.append(_child)
+        # sort the children
+        for child in self.children:    
+            sorted = False
+            while not sorted:
+                sorted = True
+                for i in xrange(len(self.children)-1):
+                    if self.children[i].count < self.children[i+1].count:
+                        sorted = False
+                        self.children[i], self.children[i+1] = self.children[i+1], self.children[i]
         self.count = self.count + 1
     def incrementCount(self):
         self.count = self.count + 1
