@@ -163,12 +163,13 @@ def makeItemsetFrom(_node):
 
     return itemset
 
-def findPathsInTree(root, minCoverage):
+def findPathsInTree(root, minCoverage, dataset, attributes):
     resultingItemsets = []
     queue = [root]
 
     while queue:
         current = queue.pop(0)
+        print current
         # this is the root of the tree, ignore it
         if current.value == None:
             for each in current.children:
@@ -176,6 +177,7 @@ def findPathsInTree(root, minCoverage):
         # if node's freq is higher than min coverage
         elif current.count >= minCoverage:
                 itemset = makeItemsetFrom(current)
+                print itemset, determineCoverage(dataset, attributes, itemset)
                 # get rid of trivial item sets and itemsets bigger than maxSize
                 if len(itemset) > 1 and len(itemset) <= maxSize:
                     resultingItemsets.append(itemset)
@@ -372,20 +374,22 @@ root.makeCurrentCountOriginal()
 # find small item sets #
 ########################
 
-smallItemsets = findPathsInTree(root, minCoverage)
+smallItemsets = findPathsInTree(root, minCoverage, dataset, attributes)
 
 print ""
 print "Small item sets:"
-print smallItemsets
+for each in smallItemsets:
+    print each, determineCoverage(dataset, attributes, each)
+print ""
 
 ###### build assocciation rules from smallItemsets and check accuracy
 
 totalRules = buildRulesFromItemsets(smallItemsets, dataset, attributes, minAccuracy)
 
-print ""
-print "Total rules after generating rules from small item sets:"
-print totalRules
-print ""
+# print ""
+# print "Total rules after generating rules from small item sets:"
+# print totalRules
+# print ""
 
 ############################################################
 # create header table and link nodes with same 1-item sets #
@@ -415,10 +419,16 @@ for header in headerTable:
     removeAllNodesWithAttribute(newRoot, header[0].value)
 
     # walk through this new tree and find possible item sets
-    largerItemsets.extend(findPathsInTree(newRoot, minCoverage))
+    largerItemsets.extend(findPathsInTree(newRoot, minCoverage, dataset, attributes))
 
     # restore th eoriginal counts (but not the original tree structure)
     newRoot.restoreOriginalCount()
+
+print "All sets that meet Minimum Coverage and are no more than the Max Size of Item Sets:"
+print ""
+for each in smallItemsets:
+    print "Item set: ", ", ".join([str(x) for x in each]), "   Coverage: ", determineCoverage(dataset, attributes, each)
+print ""
 
 totalRules.extend(buildRulesFromItemsets(largerItemsets, dataset, attributes, minAccuracy))
 
