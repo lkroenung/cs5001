@@ -38,8 +38,6 @@ def determineAccuracy(dataset, attributes, rule):
 
     numerator = float(determineCoverage(dataset, attributes, rule.antecedent + rule.consequent))
     denominator = float(determineCoverage(dataset, attributes, rule.antecedent))
-    # print "numer: ", numerator
-    # print "denom: ", denominator
     return (numerator/denominator)
 
 print ""
@@ -162,7 +160,6 @@ for itemset in sets:
     # if the item-set is longer than one, we need to manually account for if _ then all
     if len(itemset) > 1:
         newRule = Rule([], itemset)
-        # print newRule, determineAccuracy(dataset, attributes, newRule)
         if determineAccuracy(dataset, attributes, newRule) >= minAccuracy:
             rules.append(newRule)
 
@@ -170,7 +167,6 @@ for itemset in sets:
     for x in itemset:
         indexOfEach = itemset.index(x)
         newRule = Rule(itemset[:indexOfEach]+itemset[indexOfEach+1:], [x])
-        # print newRule, determineAccuracy(dataset, attributes, newRule)
         if determineAccuracy(dataset, attributes, newRule) >= minAccuracy and newRule not in rules:
             # passes min accuracy
             rules.append(newRule)
@@ -187,7 +183,6 @@ while stillRules:
             for each in rule.antecedent:
                 indexOfEach = rule.antecedent.index(each)
                 newRule = Rule(rule.antecedent[:indexOfEach]+rule.antecedent[indexOfEach+1:], rule.consequent + [each])
-                # print newRule, determineAccuracy(dataset, attributes, newRule)
                 if determineAccuracy(dataset, attributes, newRule) >= minAccuracy and newRule not in addRules:
                     # passes min accuracy
                     addRules.append(newRule)
