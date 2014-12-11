@@ -111,8 +111,6 @@ def determineAccuracy(dataset, attributes, rule):
     # instance where only conditions in ANTECENDENT are true
     numerator = float(determineCoverage(dataset, attributes, rule.antecedent + rule.consequent))
     denominator = float(determineCoverage(dataset, attributes, rule.antecedent))
-    print numerator
-    print denominator
     return (numerator/denominator)
 
 def buildTree(_node, instance, attribute, sets):
@@ -358,9 +356,9 @@ for instance in dataset:
         temp.append((attributeList[i], items[i]))
     instances.append(temp)
 
-print ""
-print "instances:   ", instances
-print ""
+# print ""
+# print "instances:   ", instances
+# print ""
 
 #################################################
 # for each instance in dataset, sort attributes #
@@ -393,10 +391,10 @@ for instance in instances:
     buildTree(root, instance, instance[0], sets)
 root.makeCurrentCountOriginal()
 
-print root.count
-for child in root.children:
-    for each in child.children:
-        print each.value, each.count
+# print root.count
+# for child in root.children:
+#     for each in child.children:
+#         print each.value, each.count
 
 ########################
 # find small item sets #
@@ -404,11 +402,11 @@ for child in root.children:
 
 smallItemsets = findPathsInTree(root, minCoverage, dataset, attributes)
 
-print ""
-print "Small item sets:"
-for each in smallItemsets:
-    print each, determineNewCoverage(dataset, instances, each)
-print ""
+# print ""
+# print "Small item sets:"
+# for each in smallItemsets:
+#     print each, determineNewCoverage(dataset, instances, each)
+# print ""
 
 ###### build assocciation rules from smallItemsets and check accuracy
 
