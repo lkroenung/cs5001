@@ -10,7 +10,7 @@ class node:
         self.parent = parent
         self.children = []
         self.value = value
-        self.count = 1
+        self.count = 0
         self.originalCount = None
     def __str__(self):
         return "Node:  value = " + str(self.value) + ", count = " + str(self.count)  + ", frequency = " + str(self.frequency)
@@ -61,7 +61,7 @@ class Rule():
         return "Rule:  if " + (", ".join([str(x) for x in self.antecedent]) if self.antecedent != [] else '_') + " then " + ", ".join([str(x) for x in self.consequent])
 
 # determine the coverage of an item-set on the dataset instances
-def determineCoverage(dataset, attributes, itemset):    
+def determineCoverage(dataset, attributes, itemset):
     coverage = 0
     # for every line in the @data set
     for instance in dataset:
@@ -78,22 +78,39 @@ def determineCoverage(dataset, attributes, itemset):
             coverage += 1
     return coverage
 
+def determineNewCoverage(dataset, instances, itemset):
+    coverage = 0
+    for instance in instances:
+        covers = True
+        for item in itemset:
+            found = False
+            for each in instance:
+                if each == item:
+                    found = True
+                    break
+            if found == False:
+                covers = False
+                break
+        if covers == True:
+            coverage += 1
+    return coverage
+
 # determine the accuracy of a rule
 def determineAccuracy(dataset, attributes, rule):
     # instances where ALL CONDITIONS in the rule are true
     # divided by
     # instance where only conditions in ANTECENDENT are true
-
     numerator = float(determineCoverage(dataset, attributes, rule.antecedent + rule.consequent))
     denominator = float(determineCoverage(dataset, attributes, rule.antecedent))
+    print numerator
+    print denominator
     return (numerator/denominator)
 
-# [TODO] nothing calls this atm dumby
 def buildTree(_node, instance, attribute, sets):
     child = _node.containsChild(attribute)
     # print "child:  ", child
     if child:
-        child.incrementCount()
+        _node.incrementCount()
         # is there another attribute in this instance?
         if instance.index(attribute) < len(instance)-1:
             buildTree(child, instance, instance[instance.index(attribute)+1], sets)
@@ -169,21 +186,19 @@ def findPathsInTree(root, minCoverage, dataset, attributes):
 
     while queue:
         current = queue.pop(0)
-        print current
         # this is the root of the tree, ignore it
         if current.value == None:
             for each in current.children:
                 queue.append(each)
-        # if node's freq is higher than min coverage
+        # if node's count is higher than min coverage
         elif current.count >= minCoverage:
-                itemset = makeItemsetFrom(current)
-                print itemset, determineCoverage(dataset, attributes, itemset)
-                # get rid of trivial item sets and itemsets bigger than maxSize
-                if len(itemset) > 1 and len(itemset) <= maxSize:
-                    resultingItemsets.append(itemset)
-                # continue down the tree
-                for each in current.children:
-                    queue.append(each)
+            itemset = makeItemsetFrom(current)
+            # get rid of trivial item sets and itemsets bigger than maxSize
+            if len(itemset) > 1 and len(itemset) <= maxSize:
+                resultingItemsets.append(itemset)
+            # continue down the tree
+            for each in current.children:
+                queue.append(each)
 
     return resultingItemsets
 
@@ -310,7 +325,6 @@ for key, value in attributes.items():
         # print item, determineCoverage(dataset, attributes, item)
         # if this 1 item-set passes minCoverage, add it to total sets
         if determineCoverage(dataset, attributes, item) >= minCoverage:
-            # sets.append(item)
             sets.addItemWithFrequency(item, determineCoverage(dataset, attributes, item))
 
 # print ""
@@ -326,7 +340,7 @@ for i in xrange(len(attributes)):
             attributeList.append(attribute)
             break
 
-# turning each instance into tuple ordered values in a list
+# turning each instance into tuple of ordered values in a list
 instances = []
 for instance in dataset:
     items = instance.split(',')
@@ -335,9 +349,9 @@ for instance in dataset:
         temp.append((attributeList[i], items[i]))
     instances.append(temp)
 
-# print ""
-# print "instances:   ", instances
-# print ""
+print ""
+print "instances:   ", instances
+print ""
 
 #################################################
 # for each instance in dataset, sort attributes #
@@ -370,6 +384,11 @@ for instance in instances:
     buildTree(root, instance, instance[0], sets)
 root.makeCurrentCountOriginal()
 
+print root.count
+for child in root.children:
+    for each in child.children:
+        print each.value, each.count
+
 ########################
 # find small item sets #
 ########################
@@ -379,7 +398,7 @@ smallItemsets = findPathsInTree(root, minCoverage, dataset, attributes)
 print ""
 print "Small item sets:"
 for each in smallItemsets:
-    print each, determineCoverage(dataset, attributes, each)
+    print each, determineNewCoverage(dataset, instances, each)
 print ""
 
 ###### build assocciation rules from smallItemsets and check accuracy
@@ -427,7 +446,7 @@ for header in headerTable:
 print "All sets that meet Minimum Coverage and are no more than the Max Size of Item Sets:"
 print ""
 for each in smallItemsets:
-    print "Item set: ", ", ".join([str(x) for x in each]), "   Coverage: ", determineCoverage(dataset, attributes, each)
+    print "Item set: ", ", ".join([str(x) for x in each]), "   Coverage: ", determineNewCoverage(dataset, instances, each)
 print ""
 
 totalRules.extend(buildRulesFromItemsets(largerItemsets, dataset, attributes, minAccuracy))
