@@ -197,14 +197,17 @@ def makeItemsetFrom(_node):
         if current.value != None:
             itemset.append(current.value)
 
+    # print itemset
     return itemset
 
+# [TODO] not issue with traversing the entire tree, maybe tree structure isn't right or the counts
 def findPathsInTree(root, minCoverage, dataset, attributes):
     resultingItemsets = []
     queue = [root]
 
     while queue:
         current = queue.pop(0)
+        # print "current", current
         # this is the root of the tree, ignore it
         if current.value == None:
             for each in current.children:
@@ -444,13 +447,7 @@ root.makeCurrentCountOriginal()
 
 smallItemsets = findPathsInTree(root, minCoverage, dataset, attributes)
 
-print ""
-for each in smallItemsets:
-    print each, determineCoverage(dataset, attributes, each), determineCoverage(dataset, attributes, each)
-print ""
-
 # build assocciation rules from smallItemsets and check accuracy
-
 totalRules = buildRulesFromItemsets(smallItemsets, dataset, attributes, minAccuracy)
 
 ############################################################
