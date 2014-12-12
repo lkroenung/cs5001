@@ -267,6 +267,8 @@ while minCoverage < 1:
         minCoverage = int(minCoverage)
     except ValueError:
         minCoverage = 0
+    if int(minCoverage) < 1:
+        print "Min coverage should be 1 or more, try again:"
 
 maxSize = 0
 while maxSize < 1:
@@ -275,14 +277,18 @@ while maxSize < 1:
         maxSize = int(maxSize)
     except ValueError:
         maxSize = 0
+    if int(maxSize) < 1:
+        print "Max size should be 1 or more, try again:"
 
 minAccuracy = -1
-while minAccuracy <= 0 or minAccuracy > 1:
+while minAccuracy < 0 or minAccuracy > 1:
     minAccuracy = raw_input("Minimum accuracy (0.0-1.0): ")
     try:
         minAccuracy = float(minAccuracy)
     except ValueError:
         minAccuracy = -1
+    if float(minAccuracy) < 0 or float(minAccuracy) > 1:
+        print "Min accuracy should be between 0-1, try again:"
 
 reportNumber = -1
 while reportNumber <= 0 and reportNumber != 'all':
@@ -293,6 +299,8 @@ while reportNumber <= 0 and reportNumber != 'all':
                 reportNumber = -1
         except ValueError:
             reportNumber = -1
+        if int(reportNumber) < 1:
+            print "Report number should be an integer above 0 or 'all', try again:"
 
 dataStart = False
 dataset = []
@@ -415,7 +423,12 @@ root.makeCurrentCountOriginal()
 
 smallItemsets = findPathsInTree(root, minCoverage, dataset, attributes)
 
-###### build assocciation rules from smallItemsets and check accuracy
+print ""
+for each in smallItemsets:
+    print each, determineCoverage(dataset, attributes, each), determineNewCoverage(dataset, attributes, each)
+print ""
+
+# build assocciation rules from smallItemsets and check accuracy
 
 totalRules = buildRulesFromItemsets(smallItemsets, dataset, attributes, minAccuracy)
 
