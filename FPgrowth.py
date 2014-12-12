@@ -19,6 +19,12 @@ class node:
     def __repr__(self):
         return str(self.value)
 
+    def printTree(self, level=0):
+        ret = "\t"*level+repr(self.value)+"\n"
+        for child in self.children:
+            ret += child.printTree(level+1)
+        return ret
+
     def addChild(self, _child):
         # add child node to list of children
         self.children.append(_child)
