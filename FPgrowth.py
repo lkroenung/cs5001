@@ -464,17 +464,18 @@ for header in headerTable:
     # walk through this new tree and find possible item sets
     largerItemsets.extend(findPathsInTree(newRoot, minCoverage, dataset, attributes))
 
-    # restore th eoriginal counts (but not the original tree structure)
+    # restore the original counts (but not the original tree structure)
     newRoot.restoreOriginalCount()
 
 print "All sets that meet Minimum Coverage and are no more than the Max Size of Item Sets (" + str(maxSize) + "):"
 print ""
 for each in smallItemsets:
-    print "Item set: ", ", ".join([str(x) for x in each]), "   Coverage: ", determineNewCoverage(dataset, instances, each)
+    print "Item set: ", ", ".join([str(x) for x in each]), "   Coverage: ", determineCoverage(dataset, instances, each)
 print ""
 
 totalRules.extend(buildRulesFromItemsets(largerItemsets, dataset, attributes, minAccuracy))
 
+# sort and print out the final rules
 finalRules = [[each, determineAccuracy(dataset, attributes, each)] for each in totalRules]
 finalRules.sort(key=lambda x: x[1])
 finalRules.reverse()
