@@ -12,10 +12,13 @@ class node:
         self.value = value
         self.count = 0
         self.originalCount = None
+
     def __str__(self):
         return "Node:  value = " + str(self.value) + ", count = " + str(self.count)  + ", frequency = " + str(self.frequency)
+
     def __repr__(self):
         return str(self.value)
+
     def addChild(self, _child):
         # add child node to list of children
         self.children.append(_child)
@@ -30,8 +33,10 @@ class node:
                         self.children[i], self.children[i+1] = self.children[i+1], self.children[i]
         # increment the count of this node because it has one additional child
         self.count = self.count + 1
+
     def incrementCount(self):
         self.count = self.count + 1
+
     def makeCurrentCountOriginal(self):
         # save the current count of each node
         # this is usefull because when we start to manipulate the tree
@@ -40,11 +45,13 @@ class node:
         self.originalCount = self.count
         for child in self.children: # recurse down
             child.makeCurrentCountOriginal()
+
     def restoreOriginalCount(self):
         # restores the count in originalCount for purposes described above
         self.count = self.originalCount
         for child in self.children:
             child.restoreOriginalCount()
+
     def containsChild(self, attribute):
         # if this node has a child with the same attribute as the given attribute
         #   return that child
@@ -59,10 +66,12 @@ class node:
 class OneItemSets:
     def __init__(self):
         self.dict = {}
+
     def addItemWithFrequency(self, item, frequency):
         # add the item to the dict with frequency as its value
         temp = str( str(item[0][0]) + str(item[0][1]) )
         self.dict.update({temp: frequency})
+
     def getFrequencyForItem(self, item):
         # returns the frequency of the one item set
         # this makes searching much faster for larger datasets
@@ -75,8 +84,10 @@ class Rule():
         self.consequent = cons
         (self.antecedent).sort()
         (self.consequent).sort()
+
     def __eq__(self, other):
         return (self.antecedent == other.antecedent and self.consequent == other.consequent)
+
     def __repr__(self):
         return "Rule:  if " + (", ".join([str(x) for x in self.antecedent]) if self.antecedent != [] else '_') + " then " + ", ".join([str(x) for x in self.consequent])
 
@@ -109,6 +120,7 @@ def determineAccuracy(dataset, attributes, rule):
 
 def buildTree(_node, instance, attribute, sets):
     child = _node.containsChild(attribute)
+    # check to see if passed in node has this attribute as a child already
     if child:
         _node.incrementCount()
         # is there another attribute in this instance?
@@ -116,6 +128,7 @@ def buildTree(_node, instance, attribute, sets):
             buildTree(child, instance, instance[instance.index(attribute)+1], sets)
         else:
             return
+    # if the attribute is not in this node's children, add it
     else:
         newNode = node(attribute, sets.getFrequencyForItem(attribute), _node)
         _node.addChild(newNode)
@@ -145,7 +158,7 @@ def createHeaderTable(_node, headerTable):
     return
 
 # changes the count attribute of each node so that it reflects the number of times it's children
-#   have the attribute given
+# have the attribute given
 def extendTree(_node, attribute): # [TODO] check this function
     if _node.children:
         _node.count = 0
@@ -178,6 +191,7 @@ def makeItemsetFrom(_node):
     itemset = []
     itemset.append(current.value)
 
+    # while we haven't hit the root, keep going up the tree
     while current.parent != None:
         current = current.parent
         if current.value != None:
