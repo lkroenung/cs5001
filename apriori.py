@@ -40,8 +40,11 @@ def determineAccuracy(dataset, attributes, rule):
     denominator = float(determineCoverage(dataset, attributes, rule.antecedent))
     return (numerator/denominator)
 
+########################
+# read in a .arff file #
+########################
+
 print ""
-# read in an .arff file
 filename = raw_input("Name of the input file: ")
 if not filename.lower().endswith(".arff"):
     print "The file must be of type .arff"
@@ -134,6 +137,7 @@ for line in datasetLines:
     elif line.lower() == "@data":
         dataStart = True
 
+# find all of the options in the data instances for attributes that are numeric
 for attribute, attrDict in attributes.items():
     if attrDict['options'] == 'real' or attrDict['options'] == 'REAL':
         numberOptions = []
@@ -213,10 +217,13 @@ addRules = []
 stillRules = True
 
 while stillRules:
+    # find all rules with current consequent size and more than 1 in antecedent
     currentRules = [rule for rule in rules if len(rule.consequent) == currentConsequentSize and len(rule.antecedent) > 1]
     addRules = []
+    # if there are any rules that meet current rule requirements
     if currentRules:
         for rule in currentRules:
+            # move over every itemset in antecedent once seperately to make new rules
             for each in rule.antecedent:
                 indexOfEach = rule.antecedent.index(each)
                 newRule = Rule(rule.antecedent[:indexOfEach]+rule.antecedent[indexOfEach+1:], rule.consequent + [each])
@@ -229,6 +236,7 @@ while stillRules:
     rules.extend(addRules)
 
 print ""
+# sort and print out the final rules
 finalRules = [[each, determineAccuracy(dataset, attributes, each)] for each in rules]
 finalRules.sort(key=lambda x: x[1])
 finalRules.reverse()

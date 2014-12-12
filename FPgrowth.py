@@ -229,10 +229,13 @@ def buildRulesFromItemsets(itemsets, dataset, attributes, minAccuracy):
     stillRules = True
 
     while stillRules:
+        # find all rules with current consequent size and more than 1 in antecedent
         currentRules = [rule for rule in rules if len(rule.consequent) == currentConsequentSize and len(rule.antecedent) > 1]
         addRules = []
+        # if there are any rules that meet current rule requirements
         if currentRules:
             for rule in currentRules:
+                # move over every itemset in antecedent once seperately to make new rules
                 for each in rule.antecedent:
                     indexOfEach = rule.antecedent.index(each)
                     newRule = Rule(rule.antecedent[:indexOfEach]+rule.antecedent[indexOfEach+1:], rule.consequent + [each])
@@ -250,6 +253,7 @@ def buildRulesFromItemsets(itemsets, dataset, attributes, minAccuracy):
 ########################
 # read in a .arff file #
 ########################
+
 print ""
 filename = raw_input("Name of the input file: ")
 if not filename.lower().endswith(".arff"):
@@ -342,6 +346,7 @@ for line in datasetLines:
     elif line.lower() == "@data":
         dataStart = True
 
+# find all of the options in the data instances for attributes that are numeric
 for attribute, attrDict in attributes.items():
     if attrDict['options'] == 'real' or attrDict['options'] == 'REAL':
         numberOptions = []
@@ -356,6 +361,7 @@ print ""
 ########################################
 # compute frequency of each 1-item set #
 ########################################
+
 # find all 1 item-sets
 sets = OneItemSets()
 # go through the attributes dict
