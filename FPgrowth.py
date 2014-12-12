@@ -17,28 +17,38 @@ class node:
     def __repr__(self):
         return str(self.value)
     def addChild(self, _child):
+        # add child node to list of children
         self.children.append(_child)
-        # sort the children
+        # sort the children so that the child with the highest count is fist
         for child in self.children:    
             sorted = False
-            while not sorted:
+            while not sorted: # bubble sort
                 sorted = True
                 for i in xrange(len(self.children)-1):
                     if self.children[i].count < self.children[i+1].count:
                         sorted = False
                         self.children[i], self.children[i+1] = self.children[i+1], self.children[i]
+        # increment the count of this node because it has one additional child
         self.count = self.count + 1
     def incrementCount(self):
         self.count = self.count + 1
     def makeCurrentCountOriginal(self):
+        # save the current count of each node
+        # this is usefull because when we start to manipulate the tree
+        # we need to restore it's original counts each time we iterate
+        # this function saves the count values for later
         self.originalCount = self.count
-        for child in self.children:
+        for child in self.children: # recurse down
             child.makeCurrentCountOriginal()
     def restoreOriginalCount(self):
+        # restores the count in originalCount for purposes described above
         self.count = self.originalCount
         for child in self.children:
             child.restoreOriginalCount()
     def containsChild(self, attribute):
+        # if this node has a child with the same attribute as the given attribute
+        #   return that child
+        # else return None
         if self.children == None:
             return None
         for child in self.children:
@@ -50,9 +60,13 @@ class OneItemSets:
     def __init__(self):
         self.dict = {}
     def addItemWithFrequency(self, item, frequency):
+        # add the item to the dict with frequency as its value
         temp = str( str(item[0][0]) + str(item[0][1]) )
         self.dict.update({temp: frequency})
     def getFrequencyForItem(self, item):
+        # returns the frequency of the one item set
+        # this makes searching much faster for larger datasets
+        #   after the value is generated the first time
         return self.dict.get(str(str(item[0]) + str(item[1])))
 
 class Rule():
@@ -80,24 +94,6 @@ def determineCoverage(dataset, attributes, itemset):
             # exist in this instance then coverage should increase by 1
             if instanceItems[attributes[item[0]]['index']] != item[1]:
                 covers = False
-        if covers == True:
-            coverage += 1
-    return coverage
-
- # this function is like the above but it doesn't matter if the attributes are our of order from the original set
-def determineNewCoverage(dataset, instances, itemset):
-    coverage = 0
-    for instance in instances:
-        covers = True
-        for item in itemset:
-            found = False
-            for each in instance:
-                if each == item:
-                    found = True
-                    break
-            if found == False:
-                covers = False
-                break
         if covers == True:
             coverage += 1
     return coverage
@@ -148,9 +144,12 @@ def createHeaderTable(_node, headerTable):
         createHeaderTable(child, headerTable)
     return
 
-def extendTree(_node, attribute):
+# changes the count attribute of each node so that it reflects the number of times it's children
+#   have the attribute given
+def extendTree(_node, attribute): # [TODO] check this function
     if _node.children:
         _node.count = 0
+        # recurse down
         for child in _node.children:
             _node.count = _node.count + extendTree(child, attribute)
         return _node.count
@@ -161,7 +160,9 @@ def extendTree(_node, attribute):
             _node.count = 0
             return _node.count
 
-def removeAllNodesWithAttribute(_node, attribute):
+# removes all nodes in tree with the given attribute
+# assumes that the attribute given is a leaf node
+def removeAllNodesWithAttribute(_node, attribute): # [TODO] check this function
     removeMe = []
     for child in _node.children:
         if child.value == attribute:
@@ -431,7 +432,7 @@ smallItemsets = findPathsInTree(root, minCoverage, dataset, attributes)
 
 print ""
 for each in smallItemsets:
-    print each, determineCoverage(dataset, attributes, each), determineNewCoverage(dataset, attributes, each)
+    print each, determineCoverage(dataset, attributes, each), determineCoverage(dataset, attributes, each)
 print ""
 
 # build assocciation rules from smallItemsets and check accuracy
@@ -470,7 +471,7 @@ for header in headerTable:
 print "All sets that meet Minimum Coverage and are no more than the Max Size of Item Sets (" + str(maxSize) + "):"
 print ""
 for each in smallItemsets:
-    print "Item set: ", ", ".join([str(x) for x in each]), "   Coverage: ", determineNewCoverage(dataset, instances, each)
+    print "Item set: ", ", ".join([str(x) for x in each]), "   Coverage: ", determineCoverage(dataset, attributes, each)
 print ""
 
 totalRules.extend(buildRulesFromItemsets(largerItemsets, dataset, attributes, minAccuracy))
