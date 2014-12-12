@@ -165,7 +165,7 @@ def createHeaderTable(_node, headerTable):
 
 # changes the count attribute of each node so that it reflects the number of times it's children
 # have the attribute given
-def extendTree(_node, attribute): # [TODO] check this function
+def extendTree(_node, attribute):
     if _node.children:
         _node.count = 0
         # recurse down
@@ -181,7 +181,7 @@ def extendTree(_node, attribute): # [TODO] check this function
 
 # removes all nodes in tree with the given attribute
 # assumes that the attribute given is a leaf node
-def removeAllNodesWithAttribute(_node, attribute): # [TODO] check this function
+def removeAllNodesWithAttribute(_node, attribute):
     removeMe = []
     for child in _node.children:
         if child.value == attribute:
@@ -192,6 +192,7 @@ def removeAllNodesWithAttribute(_node, attribute): # [TODO] check this function
     for me in removeMe:
         _node.children.remove(me)
 
+# make an itemset starting from a specific node going up the tree
 def makeItemsetFrom(_node):
     current = _node
     itemset = []
@@ -203,17 +204,14 @@ def makeItemsetFrom(_node):
         if current.value != None:
             itemset.append(current.value)
 
-    # print itemset
     return itemset
 
-# [TODO] not issue with traversing the entire tree, maybe tree structure isn't right or the counts
 def findPathsInTree(root, minCoverage, dataset, attributes):
     resultingItemsets = []
     queue = [root]
 
     while queue:
         current = queue.pop(0)
-        # print "current", current
         # this is the root of the tree, ignore it
         if current.value == None:
             for each in current.children:
